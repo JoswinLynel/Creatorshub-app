@@ -42,3 +42,18 @@ Build CreatorHub — an all-in-one analytics, automation and business management
 - **P0 (deferred)** Automations page (comment + scheduling rules), Media Vault UI (uploader wired to Emergent storage, already backend-ready), AI Insights refresh animation.
 - **P1** Brand Deals detail drawer + Kanban drag-drop (@dnd-kit), Media Kit PDF export, CSV export for Posts.
 - **P2** Real Instagram/LinkedIn OAuth, Resend email for invites, Billing tab, light-mode toggle, Recharts ResponsiveContainer width-1 warnings cleanup.
+
+## Implemented — 2026-04-18 (v2 ship)
+- **Automations** (`/automations`) — two-column layout (Comment / Scheduling), six seeded default rules, per-row edit + toggle, full Automation log with Success/Failed pills. New Rule Modal with Platform pills, 2x2 Trigger/Action cards, conditional keyword or schedule fields, Message template with variable chips + colour-coded live preview, char counter (amber >=350, red >=450), rule name + max/day + activate + skip-repeat, live rule-preview sentence.
+- **Connections** (`/connections` standalone + Settings tab) — two cards (IG pink, LI blue), Sync now + Disconnect with confirmation, Mock OAuth modal for reconnect, auto-sync toggle + Sync all now.
+- **Media Vault** (`/media-vault`) — files grid, caption library with search + copy + Top-engagement badges, hashtag sets with copy, storage-usage bar.
+- **Settings tabs** — General / Connections / Notifications.
+- **Sidebar overhaul** — correct order, live badges via `/api/nav/counts` every 60s (Tasks red, Calendar green, AI Insights/Team purple). Automations + Media Vault + Connections now fully enabled.
+- **Backend additions** — Automations CRUD + toggle + logs + auto-seed, `/api/nav/counts`, `/api/connections/sync-all`, `/api/deals/:id` PUT. Tests: 37/37 pass.
+
+## Backlog (v3 / future)
+- P0: Brand Deals Kanban drag-drop (@dnd-kit) + detail drawer + Media Kit PDF export.
+- P1: Real IG Graph API + LinkedIn OAuth wiring when credentials provided.
+- P1: Light-mode toggle.
+- P2: Real automation rule evaluator / webhook processor.
+- P2: Split server.py into /routes subpackage; Billing tab; Resend email for invites.

@@ -1149,7 +1149,9 @@ async def update_deal(deal_id: str, data: DealUpdate, user: Dict = Depends(requi
             {"id": deal_id, "workspace_id": user["workspace_id"]},
             {"$set": updates}
         )
-    doc = await db.brand_deals.find_one({"id": deal_id}, {"_id": 0})
+    doc = await db.brand_deals.find_one({"id": deal_id, "workspace_id": user["workspace_id"]}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Deal not found")
     return doc
 
 # =============== INCLUDE & MIDDLEWARE ===============

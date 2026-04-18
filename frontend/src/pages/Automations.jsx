@@ -216,7 +216,7 @@ const NewRuleModal = ({ open, onClose, onCreated, existing }) => {
             <div className="flex items-center gap-1.5 mb-2 flex-wrap">
               <span className="text-[11px] text-ink-secondary">Insert variable:</span>
               {VARIABLES.map(v => (
-                <button key={v} onClick={() => insertVar(v)} data-testid={`var-${v}`} className="text-[11px] px-2 py-0.5 rounded-full border border-edge hover:border-brand text-brand bg-brand/10">
+                <button key={v} onClick={() => insertVar(v)} data-testid={`var-${v.replace(/[{}]/g, "")}`} className="text-[11px] px-2 py-0.5 rounded-full border border-edge hover:border-brand text-brand bg-brand/10">
                   {v}
                 </button>
               ))}
