@@ -77,9 +77,9 @@ export default function CalendarPage() {
         <div className="flex items-center gap-3">
           <h1 className="text-2xl sm:text-3xl font-display font-medium">{monthName(view.m)} {view.y}</h1>
           <div className="flex items-center gap-1">
-            <button onClick={() => changeMonth(-1)} data-testid="prev-month" className="p-1.5 rounded-md border border-edge hover:border-edge-hover"><ChevronLeft className="w-4 h-4" /></button>
-            <button onClick={() => setView({ m: today.getMonth(), y: today.getFullYear() })} className="px-3 py-1.5 rounded-md border border-edge hover:border-edge-hover text-xs">Today</button>
-            <button onClick={() => changeMonth(1)} data-testid="next-month" className="p-1.5 rounded-md border border-edge hover:border-edge-hover"><ChevronRight className="w-4 h-4" /></button>
+            <button onClick={() => changeMonth(-1)} data-testid="calendar-prev" className="p-1.5 rounded-md border border-edge hover:border-edge-hover"><ChevronLeft className="w-4 h-4" /></button>
+            <button onClick={() => setView({ m: today.getMonth(), y: today.getFullYear() })} data-testid="calendar-today" className="px-3 py-1.5 rounded-md border border-edge hover:border-edge-hover text-xs">Today</button>
+            <button onClick={() => changeMonth(1)} data-testid="calendar-next" className="p-1.5 rounded-md border border-edge hover:border-edge-hover"><ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       </div>

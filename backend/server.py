@@ -399,13 +399,18 @@ async def get_analytics(platform: str = "instagram", range_val: str = Query("30d
     posts_count = await db.posts.count_documents({"workspace_id": user["workspace_id"], "platform": platform})
     avg_views = round(curr_views / max(posts_count, 1))
 
-    # Weekly bars - last 8 weeks
+    # Weekly bars - fetch last 8 weeks independently of range
+    weekly_since = (datetime.now(timezone.utc) - timedelta(days=8 * 7)).date().isoformat()
+    weekly_snaps = await db.analytics_snapshots.find(
+        {"workspace_id": user["workspace_id"], "platform": platform, "date": {"$gte": weekly_since}},
+        {"_id": 0}
+    ).sort("date", 1).to_list(500)
     weekly = []
     for i in range(8):
-        wstart = (datetime.now(timezone.utc) - timedelta(days=(7 - i) * 7)).date()
+        wstart = (datetime.now(timezone.utc) - timedelta(days=(8 - i) * 7)).date()
         wend = wstart + timedelta(days=7)
-        wsnaps = [s for s in snaps if wstart.isoformat() <= s["date"] < wend.isoformat()]
-        weekly.append({"week": f"W{i+1}", "views": total(wsnaps, "views")})
+        wsnaps = [s for s in weekly_snaps if wstart.isoformat() <= s["date"] < wend.isoformat()]
+        weekly.append({"week": wstart.strftime("%b %d"), "views": total(wsnaps, "views")})
 
     # sparklines: last 7 days of views for stat cards
     spark = [{"d": s["date"], "v": s.get("views", 0)} for s in snaps[-7:]]
