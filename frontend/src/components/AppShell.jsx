@@ -1,13 +1,14 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import {
   Home, BarChart3, FileText, CheckSquare, Calendar as CalendarIcon, PlayCircle,
   Handshake, Sparkles, Image, Users, Settings as SettingsIcon, LogOut, ChevronsLeft, ChevronsRight,
-  Bell,
+  Bell, Link2,
 } from "lucide-react";
 import { useAuth, useUI, usePlatform } from "@/lib/store";
 import { has, ROLE_INFO } from "@/lib/permissions";
 import { initials, avatarColor, relativeTime } from "@/lib/format";
+import { api } from "@/lib/api";
 import TopBar from "@/components/TopBar";
 
 const NAV = [
@@ -17,17 +18,18 @@ const NAV = [
     { label: "Posts", to: "/posts", icon: FileText, permission: "posts_view" },
   ]},
   { section: "Productivity", items: [
-    { label: "Tasks", to: "/tasks", icon: CheckSquare, permission: "tasks_view", badgeKey: "overdue" },
-    { label: "Calendar", to: "/calendar", icon: CalendarIcon, permission: "calendar_view", badgeKey: "today" },
+    { label: "Tasks", to: "/tasks", icon: CheckSquare, permission: "tasks_view", badgeKey: "overdue", badgeColor: "bg-red-500/20 text-red-400 border-red-500/30" },
+    { label: "Calendar", to: "/calendar", icon: CalendarIcon, permission: "calendar_view", badgeKey: "today_events", badgeColor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
   ]},
   { section: "Growth", items: [
-    { label: "Automations", to: "/automations", icon: PlayCircle, permission: "automations_view", soon: true },
+    { label: "Automations", to: "/automations", icon: PlayCircle, permission: "automations_view" },
     { label: "Brand Deals", to: "/brand-deals", icon: Handshake, permission: "brand_deals_view" },
-    { label: "AI Insights", to: "/ai-insights", icon: Sparkles, permission: "ai_insights_view" },
+    { label: "AI Insights", to: "/ai-insights", icon: Sparkles, permission: "ai_insights_view", badgeKey: "insights_unread", badgeColor: "bg-brand/20 text-brand border-brand/40" },
   ]},
   { section: "Workspace", items: [
-    { label: "Media Vault", to: "/media", icon: Image, permission: "media_vault_view", soon: true },
-    { label: "Team", to: "/team", icon: Users, permission: "team_view" },
+    { label: "Media Vault", to: "/media-vault", icon: Image, permission: "media_vault_view" },
+    { label: "Connections", to: "/connections", icon: Link2 },
+    { label: "Team", to: "/team", icon: Users, permission: "team_view", badgeKey: "team", badgeColor: "bg-brand/20 text-brand border-brand/40" },
     { label: "Settings", to: "/settings", icon: SettingsIcon, permission: "settings_view" },
   ]},
 ];
@@ -36,12 +38,22 @@ const Sidebar = () => {
   const { user, logout } = useAuth();
   const { sidebarCollapsed: collapsed, toggleSidebar } = useUI();
   const navigate = useNavigate();
+  const [counts, setCounts] = useState({ overdue: 0, today_events: 0, team: 0, insights_unread: 0 });
+
+  useEffect(() => {
+    let alive = true;
+    const fetch = () => api.get("/nav/counts").then(({ data }) => alive && setCounts(data)).catch(() => {});
+    fetch();
+    const id = setInterval(fetch, 60000);
+    return () => { alive = false; clearInterval(id); };
+  }, []);
+
   const roleInfo = user?.role === "owner"
     ? { label: "Owner", color: "bg-brand/20 text-brand border-brand/40" }
     : ROLE_INFO[user?.role] || { label: user?.role, color: "bg-zinc-500/20 text-zinc-300 border-zinc-500/30" };
 
   const visibleSections = NAV
-    .map(sec => ({ ...sec, items: sec.items.filter(i => has(user, i.permission) && !i.soon) }))
+    .map(sec => ({ ...sec, items: sec.items.filter(i => !i.permission || has(user, i.permission)) }))
     .filter(sec => sec.items.length > 0);
 
   return (
@@ -82,6 +94,7 @@ const Sidebar = () => {
             <div className="space-y-0.5">
               {sec.items.map((item) => {
                 const Icon = item.icon;
+                const badgeVal = item.badgeKey ? counts[item.badgeKey] : 0;
                 return (
                   <NavLink
                     key={item.to}
@@ -94,7 +107,16 @@ const Sidebar = () => {
                     title={collapsed ? item.label : undefined}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
-                    {!collapsed && <span className="truncate">{item.label}</span>}
+                    {!collapsed && (
+                      <>
+                        <span className="truncate flex-1">{item.label}</span>
+                        {badgeVal > 0 && (
+                          <span className={`text-[10px] px-1.5 py-0 rounded border ${item.badgeColor || "bg-brand/20 text-brand border-brand/40"}`}>
+                            {badgeVal}
+                          </span>
+                        )}
+                      </>
+                    )}
                   </NavLink>
                 );
               })}

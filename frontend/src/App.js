@@ -14,6 +14,9 @@ import CalendarPage from "@/pages/CalendarPage";
 import Team from "@/pages/Team";
 import AIInsights from "@/pages/AIInsights";
 import BrandDeals from "@/pages/BrandDeals";
+import Automations from "@/pages/Automations";
+import Connections from "@/pages/Connections";
+import MediaVault from "@/pages/MediaVault";
 import Settings from "@/pages/Settings";
 import NoAccess from "@/pages/NoAccess";
 import { has } from "@/lib/permissions";
@@ -77,6 +80,9 @@ function App() {
           <Route path="/team" element={<ProtectedRoute permission="team_view"><Team /></ProtectedRoute>} />
           <Route path="/ai-insights" element={<ProtectedRoute permission="ai_insights_view"><AIInsights /></ProtectedRoute>} />
           <Route path="/brand-deals" element={<ProtectedRoute permission="brand_deals_view"><BrandDeals /></ProtectedRoute>} />
+          <Route path="/automations" element={<ProtectedRoute permission="automations_view"><Automations /></ProtectedRoute>} />
+          <Route path="/connections" element={<ProtectedRoute><Connections /></ProtectedRoute>} />
+          <Route path="/media-vault" element={<ProtectedRoute permission="media_vault_view"><MediaVault /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute permission="settings_view"><Settings /></ProtectedRoute>} />
           <Route path="/no-access" element={<NoAccess />} />
         </Route>

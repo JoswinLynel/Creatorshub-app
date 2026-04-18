@@ -1010,6 +1010,148 @@ async def list_hashtags(user: Dict = Depends(require_permission("media_vault_vie
     items = await db.hashtag_sets.find({"workspace_id": user["workspace_id"]}, {"_id": 0}).to_list(200)
     return items
 
+# =============== ROUTES: AUTOMATIONS ===============
+DEFAULT_AUTOMATIONS = [
+    {"name": "DM when comment = 'link'", "category": "comment", "trigger_type": "comment_keyword", "keyword": "link", "action": "send_dm", "message_template": "Hey {name}! Here's the link: {link}", "platform": "instagram", "icon": "💬", "max_per_day": 100, "is_active": True, "trigger_count": 340},
+    {"name": "Auto-like first 50 comments", "category": "comment", "trigger_type": "new_comment", "keyword": "", "action": "like_comment", "message_template": "", "platform": "instagram", "icon": "👍", "max_per_day": 50, "is_active": True, "trigger_count": 1120},
+    {"name": "Reply 'interested' → calendar link", "category": "comment", "trigger_type": "comment_keyword", "keyword": "interested", "action": "reply_comment", "message_template": "Thanks {name}! Book a call: {link}", "platform": "linkedin", "icon": "📩", "max_per_day": 50, "is_active": True, "trigger_count": 82},
+    {"name": "Weekly digest email", "category": "schedule", "trigger_type": "time_based", "keyword": "weekly_monday_9am", "action": "send_dm", "message_template": "", "platform": "both", "icon": "📊", "max_per_day": 1, "is_active": True, "trigger_count": 12},
+    {"name": "Repost best Reel to Story", "category": "schedule", "trigger_type": "time_based", "keyword": "weekly", "action": "create_task", "message_template": "", "platform": "instagram", "icon": "🔁", "max_per_day": 1, "is_active": False, "trigger_count": 0},
+    {"name": "Overdue task alert", "category": "schedule", "trigger_type": "time_based", "keyword": "hourly", "action": "send_dm", "message_template": "", "platform": "both", "icon": "🔔", "max_per_day": 100, "is_active": True, "trigger_count": 47},
+]
+
+class AutomationIn(BaseModel):
+    name: str
+    category: str = "comment"
+    trigger_type: str
+    keyword: Optional[str] = ""
+    action: str
+    message_template: Optional[str] = ""
+    platform: str = "both"
+    max_per_day: int = 50
+    is_active: bool = True
+    icon: Optional[str] = "⚡"
+
+async def ensure_automations_seeded(workspace_id: str):
+    count = await db.automations.count_documents({"workspace_id": workspace_id})
+    if count > 0:
+        return
+    now = datetime.now(timezone.utc).isoformat()
+    docs = []
+    for d in DEFAULT_AUTOMATIONS:
+        docs.append({"id": str(uuid.uuid4()), "workspace_id": workspace_id, "created_at": now, **d})
+    if docs:
+        await db.automations.insert_many(docs)
+
+@api_router.get("/automations")
+async def list_automations(user: Dict = Depends(require_permission("automations_view"))):
+    await ensure_automations_seeded(user["workspace_id"])
+    items = await db.automations.find({"workspace_id": user["workspace_id"]}, {"_id": 0}).to_list(200)
+    comment = [i for i in items if i.get("category") == "comment"]
+    schedule = [i for i in items if i.get("category") == "schedule"]
+    return {"comment": comment, "schedule": schedule}
+
+@api_router.post("/automations")
+async def create_automation(data: AutomationIn, user: Dict = Depends(require_permission("automations_edit"))):
+    doc = {
+        "id": str(uuid.uuid4()),
+        "workspace_id": user["workspace_id"],
+        "trigger_count": 0,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        **data.model_dump(),
+    }
+    await db.automations.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+@api_router.put("/automations/{aid}")
+async def update_automation(aid: str, data: Dict[str, Any], user: Dict = Depends(require_permission("automations_edit"))):
+    allowed = {"name", "category", "trigger_type", "keyword", "action", "message_template", "platform", "max_per_day", "is_active", "icon"}
+    updates = {k: v for k, v in data.items() if k in allowed}
+    result = await db.automations.update_one({"id": aid, "workspace_id": user["workspace_id"]}, {"$set": updates})
+    if result.matched_count == 0:
+        raise HTTPException(404, "Automation not found")
+    doc = await db.automations.find_one({"id": aid}, {"_id": 0})
+    return doc
+
+@api_router.put("/automations/{aid}/toggle")
+async def toggle_automation(aid: str, user: Dict = Depends(require_permission("automations_edit"))):
+    doc = await db.automations.find_one({"id": aid, "workspace_id": user["workspace_id"]})
+    if not doc:
+        raise HTTPException(404, "Automation not found")
+    new_state = not doc.get("is_active", True)
+    await db.automations.update_one({"id": aid}, {"$set": {"is_active": new_state}})
+    return {"ok": True, "is_active": new_state}
+
+@api_router.delete("/automations/{aid}")
+async def delete_automation(aid: str, user: Dict = Depends(require_permission("automations_edit"))):
+    await db.automations.delete_one({"id": aid, "workspace_id": user["workspace_id"]})
+    return {"ok": True}
+
+@api_router.get("/automations/logs")
+async def automation_logs(user: Dict = Depends(require_permission("automations_view"))):
+    # Fetch stored logs or synthesise from triggered automations
+    logs = await db.automation_logs.find({"workspace_id": user["workspace_id"]}, {"_id": 0}).sort("created_at", -1).limit(10).to_list(10)
+    if logs:
+        return {"logs": logs}
+    # Mock 5 entries based on current automations
+    autos = await db.automations.find({"workspace_id": user["workspace_id"], "is_active": True}, {"_id": 0}).to_list(10)
+    samples = [
+        {"triggered_by": "@sarah_mills", "action_taken": "Sent DM", "status": "success", "minutes_ago": 3},
+        {"triggered_by": "@mike.t", "action_taken": "Liked comment", "status": "success", "minutes_ago": 14},
+        {"triggered_by": "@brand.collab", "action_taken": "Replied 'interested'", "status": "success", "minutes_ago": 42},
+        {"triggered_by": "@random_user", "action_taken": "Sent DM", "status": "failed", "minutes_ago": 64},
+        {"triggered_by": "@jane_creator", "action_taken": "Sent DM", "status": "success", "minutes_ago": 120},
+    ]
+    synth = []
+    for i, s in enumerate(samples):
+        auto = autos[i % max(len(autos), 1)] if autos else {"name": "Automation"}
+        synth.append({"rule_name": auto.get("name", "Automation"), **s})
+    return {"logs": synth}
+
+# =============== ROUTES: NAV COUNTS (for sidebar badges) ===============
+@api_router.get("/nav/counts")
+async def nav_counts(user: Dict = Depends(get_current_user)):
+    today = datetime.now(timezone.utc).date().isoformat()
+    overdue = await db.tasks.count_documents({"workspace_id": user["workspace_id"], "status": {"$ne": "completed"}, "date": {"$lt": today}})
+    today_events = await db.calendar_events.count_documents({"workspace_id": user["workspace_id"], "date": today})
+    team = await db.users.count_documents({"workspace_id": user["workspace_id"]})
+    return {"overdue": overdue, "today_events": today_events, "team": team, "insights_unread": 4}
+
+# =============== ROUTES: CONNECTIONS extras ===============
+@api_router.post("/connections/sync-all")
+async def sync_all(user: Dict = Depends(get_current_user)):
+    now = datetime.now(timezone.utc).isoformat()
+    await db.platform_connections.update_many(
+        {"workspace_id": user["workspace_id"], "status": "connected"},
+        {"$set": {"last_synced_at": now}}
+    )
+    return {"ok": True, "synced_at": now}
+
+@api_router.post("/connections/{platform}/disconnect")
+async def disconnect_alias(platform: str, user: Dict = Depends(require_permission("settings_edit"))):
+    await db.platform_connections.update_one(
+        {"workspace_id": user["workspace_id"], "platform": platform},
+        {"$set": {"status": "disconnected"}}
+    )
+    return {"ok": True}
+
+# =============== ROUTES: BRAND DEALS WRITE ===============
+class DealUpdate(BaseModel):
+    stage: Optional[str] = None
+    notes: Optional[str] = None
+
+@api_router.put("/deals/{deal_id}")
+async def update_deal(deal_id: str, data: DealUpdate, user: Dict = Depends(require_permission("brand_deals_edit"))):
+    updates = {k: v for k, v in data.model_dump(exclude_none=True).items()}
+    if updates:
+        await db.brand_deals.update_one(
+            {"id": deal_id, "workspace_id": user["workspace_id"]},
+            {"$set": updates}
+        )
+    doc = await db.brand_deals.find_one({"id": deal_id}, {"_id": 0})
+    return doc
+
 # =============== INCLUDE & MIDDLEWARE ===============
 app.include_router(api_router)
 

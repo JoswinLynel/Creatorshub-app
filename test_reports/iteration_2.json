@@ -1,0 +1,70 @@
+{
+  "summary": "Iteration 2 tested CreatorHub v2 additions: Automations, Connections, Media Vault, Settings tabs, reordered sidebar with badges. Ran 37/37 backend tests (16 new v2 + 21 regression) — ALL PASS. Playwright UI covered owner flow (sidebar shows all 12 items across 4 sections with correct badges Tasks=3, Calendar=2, AI Insights=4, Team=4; Automations page renders 6 seeded rules; toggle works; New Rule modal opens with all sections; Connections page shows both platform cards and disconnect→reconnect flow works; Media Vault loads; Settings tabs render embedded Connections). Permission enforcement verified end-to-end: Tom (scheduler) and Priya (analyst) each redirected to /no-access on /automations; backend returns 403 for both; Marcus (editor) returns 200.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Automations NewRuleModal variable chips",
+        "issue": "data-testid values contain curly braces: var-{name}, var-{link}, etc. Braces are not valid in CSS selectors without escaping, making automated testing brittle. Recommend changing to var-name, var-link, etc.",
+        "selector": "[data-testid='var-{name}']",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [],
+    "spec_vs_implementation_conflicts": [
+      {
+        "item": "Tom (Scheduler) sidebar",
+        "observed": "Shows Posts, Tasks, Connections (3 items)",
+        "review_spec_says": "Should show ONLY Posts and Tasks",
+        "other_misc_info_says": "Connections page has NO permission gate — intentional, all roles can view their own platform connections",
+        "verdict": "Implementation matches the 'intentional' design note but conflicts with the explicit review test item. Owner/main agent must confirm which is correct. Route-level /no-access redirect for /automations DOES work correctly for Tom.",
+        "priority": "MEDIUM"
+      },
+      {
+        "item": "Priya (Analyst) sidebar",
+        "observed": "Shows Analytics, Posts, Tasks, Brand Deals, Connections (5 items)",
+        "review_spec_says": "Should show Analytics, Posts, Tasks, Brand Deals only (no Connections)",
+        "verdict": "Same Connections inclusion issue as Tom. Matches 'intentional' design note. All other restricted items (Automations, Media Vault, Team, Dashboard, Settings, AI Insights, Calendar) are correctly hidden.",
+        "priority": "MEDIUM"
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_v2_endpoints.py",
+    "/app/backend/tests/test_creatorhub_api.py",
+    "/app/test_reports/pytest/v2_results.xml",
+    "/app/test_reports/pytest/regression_results.xml"
+  ],
+  "action_items": [
+    "DECIDE: Should Connections appear in sidebar for Scheduler/Analyst? Review request test items say NO, but 'other_misc_info' says YES (intentional — no permission gate). Current implementation shows it for all roles. If Connections should be hidden from Scheduler/Analyst sidebars, filter NAV item in AppShell.jsx by role, or add a 'connections_view' permission to ROLE_PERMISSIONS.",
+    "LOW: Rename variable-chip data-testids in Automations.jsx from var-{name} (with braces) to var-name so they are CSS-selectable without escaping.",
+    "INFO: Change-password flow only shows 2 password inputs (new + confirm) for must_change_password users — works correctly, flagged for awareness."
+  ],
+  "critical_code_review_comments": [
+    "server.py now at 1189 lines — still not split. Consider moving Automations, Nav, Connections, Deals, Team, etc. into /routes subpackage.",
+    "POST /api/automations AutomationIn uses fields {name, action, keyword, category} but the UI sends the exact same keys — naming is consistent. However 'category' (comment|schedule) vs 'trigger_type' (comment_keyword|story_reply|new_follower|time_based) is a redundant pair; one should derive category from trigger_type server-side to prevent drift.",
+    "ensure_automations_seeded() has a race condition: two concurrent GETs on a fresh workspace could both pass the count==0 check and insert_many twice → 12 rules instead of 6. Use a unique index or an atomic upsert.",
+    "GET /api/automations/logs synthesises logs from active automations — fine for demo but logs list will be empty if user deactivates all rules. The endpoint currently returns [] in that case instead of fallback demo data.",
+    "PUT /api/automations/:id accepts Dict[str, Any] with no validation — any arbitrary keys will be written to the DB (e.g., {'workspace_id': 'foo'} would overwrite workspace). Should use a typed AutomationUpdate Pydantic model.",
+    "POST /api/connections/:platform/disconnect (alias) requires 'settings_edit' permission but /connections page is intentionally gate-free — Scheduler/Analyst can see the Disconnect button on the Settings>Connections tab (if they reach it) but will get 403. Inconsistent UX. Either gate /connections page or remove permission from disconnect_alias.",
+    "nav/counts 'team' field counts ALL users in workspace including the requester — matches the AI Insights pattern (team=4 including Jane) but unusual; 'team' usually means teammates excluding self.",
+    "PUT /api/deals/:id requires 'brand_deals_edit' permission but does not verify the deal belongs to the caller's workspace before returning the find_one — since update_one uses {'workspace_id': user['workspace_id']} it is safe from cross-tenant writes, but find_one() after returns first match regardless of workspace (line 1152: {'id': deal_id} without workspace filter). Minor — could return another workspace's deal with same id (UUID collision is astronomically unlikely, but still tighten.)"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_v2_endpoints.py (new — 16 v2 regression tests)"
+  ],
+  "success_rate": {
+    "backend": "100% (37/37 — 16 new + 21 regression)",
+    "frontend": "~90% (all critical v2 flows render; permission route redirects work; sidebar filtering has 1 spec/impl conflict on Connections visibility for non-owner roles)"
+  },
+  "test_credentials": "Jane=password123 (unchanged). Marcus=temp1234 (unchanged). Tom=newpass123 (CHANGED during UI test). Priya=newpass123 (CHANGED during UI test). Main agent should re-seed if they need Tom/Priya back on temp1234. Backend pytest suite still uses temp1234 because it ran BEFORE the UI change — running UI again before backend would break it; ordering matters.",
+  "seed_data_creation": "One TEST_UI_Rule automation attempted via UI but variable-chip selector failed, so rule was NOT saved. No orphan UI-side test data. Backend pytest creates TEST_Rule_* automations and deletes them in the same test class (test_delete_automation). One TEST_signup_* workspace from regression test is NOT auto-cleaned (preexisting pattern).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Two pytest files now: /app/backend/tests/test_creatorhub_api.py (21 tests, iter1) and /app/backend/tests/test_v2_endpoints.py (16 tests, iter2). Run both with `pytest /app/backend/tests/ -v`. IMPORTANT: After UI permission testing, Tom and Priya passwords become newpass123 — update USERS dict or re-seed DB before running backend suite. All Automations endpoints validated. All permission boundaries (Scheduler/Analyst 403 on /automations, Editor 200) work. The only open question is whether 'Connections' sidebar item should be hidden from Scheduler/Analyst — review spec and 'other_misc_info' contradict each other. Variable-chip testids use curly braces which is a minor testability nit.",
+  "rca_of_the_issue": "N/A — no critical bugs found. One spec ambiguity about Connections sidebar visibility for non-owner roles (needs product decision, not a bug)."
+}
