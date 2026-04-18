@@ -16,7 +16,9 @@ const passwordStrength = (pw) => {
   return ["Weak", "Fair", "Good", "Strong"][Math.max(0, score - 1)] || "Weak";
 };
 
-const AddMemberWizard = ({ open, onClose, onCreated, granterPerms }) => {
+const AddMemberWizard = ({ open, onClose, onCreated, granterPerms, granterRole }) => {
+  const isOwner = granterRole === "owner";
+  const hasPerm = (p) => isOwner || (granterPerms || []).includes(p);
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({ name: "", email: "", phone: "", job_title: "", temp_password: "", role: "editor" });
   const [show, setShow] = useState(false);
@@ -164,13 +166,13 @@ const AddMemberWizard = ({ open, onClose, onCreated, granterPerms }) => {
                       <div className="text-[11px] uppercase tracking-wider text-ink-tertiary mb-2">{group}</div>
                       <div className="space-y-1.5">
                         {perms.map(p => {
-                          const granterHas = granterPerms.includes(p);
+                          const granterHas = hasPerm(p);
                           const on = !!custom[p];
                           return (
                             <div key={p} className="flex items-center justify-between py-1.5">
                               <div className="text-[13px] flex items-center gap-1.5">
                                 {PERMISSION_LABELS[p]}
-                                {!granterHas && <span title="You don't have this permission." className="text-[10px] text-ink-tertiary">·locked·</span>}
+                                {!granterHas && <span title="You don't have this permission." className="text-[10px] text-amber-300/80 border border-amber-500/30 rounded px-1">locked</span>}
                               </div>
                               <button
                                 data-testid={`perm-toggle-${p}`}
@@ -264,9 +266,11 @@ const AddMemberWizard = ({ open, onClose, onCreated, granterPerms }) => {
 };
 
 // ------------ Member Detail Modal ------------
-const MemberDetail = ({ member, onClose, onUpdated, onRemoved, granterPerms }) => {
+const MemberDetail = ({ member, onClose, onUpdated, onRemoved, granterPerms, granterRole }) => {
   const { user } = useAuth();
   const canEdit = has(user, "team_edit") && member.role !== "owner";
+  const isOwnerGranter = granterRole === "owner";
+  const hasPerm = (p) => isOwnerGranter || (granterPerms || []).includes(p);
   const [editing, setEditing] = useState(false);
   const [role, setRole] = useState(member.role);
   const [custom, setCustom] = useState(() => {
@@ -363,7 +367,7 @@ const MemberDetail = ({ member, onClose, onUpdated, onRemoved, granterPerms }) =
                 <div key={g}>
                   <div className="text-[11px] uppercase tracking-wider text-ink-tertiary mb-1">{g}</div>
                   {ps.map(p => {
-                    const granterHas = granterPerms.includes(p);
+                    const granterHas = hasPerm(p);
                     return (
                       <div key={p} className="flex items-center justify-between py-1 text-sm">
                         <span>{PERMISSION_LABELS[p]}</span>
