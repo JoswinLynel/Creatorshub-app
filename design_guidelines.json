@@ -1,0 +1,143 @@
+{
+  "theme": "dark",
+  "archetype": "Archetype 4 (Swiss & High-Contrast)",
+  "typography": {
+    "heading_font": "Outfit",
+    "body_font": "Manrope",
+    "weights": [
+      400,
+      500
+    ],
+    "description": "Premium, highly legible geometric sans pairing mimicking Linear/Superhuman. Avoid Inter. Outfit for headings gives character, Manrope for body ensures flawless legibility at small UI scales. Restricted to Regular (400) and Medium (500) to force a flat, refined hierarchy without relying on heavy weights."
+  },
+  "colors": {
+    "primary": "#7c3aed",
+    "background": {
+      "primary": "#0f0f0f",
+      "secondary": "#1a1a1a",
+      "tertiary": "#242424"
+    },
+    "border": {
+      "default": "rgba(255,255,255,0.08)",
+      "hover": "rgba(255,255,255,0.15)"
+    },
+    "text": {
+      "primary": "#ffffff",
+      "secondary": "#a1a1aa",
+      "tertiary": "#71717a"
+    },
+    "status": {
+      "success": "#22c55e",
+      "warning": "#f59e0b",
+      "danger": "#ef4444"
+    },
+    "platform_accents": {
+      "instagram": "#C13584",
+      "linkedin": "#0A66C2"
+    }
+  },
+  "spacing_and_layout": {
+    "sidebar": {
+      "expanded_width": "200px",
+      "collapsed_width": "56px",
+      "behavior": "persistent, collapsible left sidebar",
+      "content": "Role-based navigation links, permission gates"
+    },
+    "topbar": {
+      "height": "48px",
+      "content": "Platform switcher tabs (Instagram pink dot, LinkedIn blue dot), date range selector, live sync indicator, notification bell"
+    },
+    "cards": {
+      "border_radius": "12px",
+      "border": "0.5px solid rgba(255,255,255,0.08)",
+      "background": "#1a1a1a"
+    },
+    "general": {
+      "whitespace": "Generous (p-6 to p-8 in containers)",
+      "transitions": "150ms ease"
+    }
+  },
+  "components": {
+    "hero_dashboard": {
+      "stats_cards": {
+        "layout": "Bento Grid",
+        "recipe": "Card component (bg-secondary, 12px rounded). Top: subtle text-secondary label (text-sm font-400). Middle: large metric text-primary (text-3xl font-500). Bottom: Recharts TinyLineChart sparkline using primary purple or success green."
+      },
+      "weekly_views_chart": {
+        "type": "Bar Chart",
+        "recipe": "Recharts BarChart inside Card. X-axis (days), Y-axis hidden. Bars: primary #7c3aed, radius [4, 4, 0, 0]. Tooltip: #1a1a1a bg, 0.5px border, white text."
+      },
+      "audience_donut": {
+        "type": "Pie Chart",
+        "recipe": "Recharts PieChart (donut style). Inner radius 60%, outer radius 80%. Colors: Instagram #C13584, LinkedIn #0A66C2. Custom active shape on hover."
+      },
+      "task_widget": {
+        "recipe": "Card container. Header with 'Tasks' and add modal trigger. List items grouped. Each item: priority dot (red/yellow/gray), task name (text-sm white), assignee avatar. Hover row: bg-tertiary."
+      },
+      "ai_insight_card": {
+        "recipe": "Card container with subtle gradient border (using primary #7c3aed at 20% opacity). Sparkles icon. Text: actionable insights based on audience donut data."
+      }
+    },
+    "modals_and_drawers": {
+      "post_detail_drawer": {
+        "pattern": "Right-side slide-out drawer. Width: 400px. Overlay: bg-black/50 backdrop-blur-sm. 0.5px left border."
+      },
+      "add_member_wizard": {
+        "pattern": "Centered modal, max-w-lg. 4-step progress bar (height 2px, primary color). Step 1: Email, Step 2: Role select, Step 3: Permission toggles (switch components), Step 4: Review."
+      }
+    },
+    "navigation": {
+      "platform_switcher": {
+        "recipe": "Tabs component in Topbar. Clean text tabs with a 6px dot indicator next to label (Instagram #C13584 / LinkedIn #0A66C2). Active tab gets bottom border or white text."
+      }
+    }
+  },
+  "micro_interactions": {
+    "hover_states": "Buttons and links transition background/border in 150ms ease. No scaling/bouncing (professional feel).",
+    "active_states": "Slight background darkening or border opacity increase (hover rgba(255,255,255,0.15)).",
+    "focus_states": "2px solid #7c3aed outline, offset by 2px with #0f0f0f background.",
+    "empty_states": "Minimalist layout, using empty_state_graphic image (max-w-[200px]), text-secondary instructions, and a subtle primary outline CTA button."
+  },
+  "charts_config": {
+    "grid_lines": "rgba(255,255,255,0.04) dashed",
+    "axis_text": "#71717a (tertiary text, 12px)",
+    "tooltip": {
+      "bg": "#1a1a1a",
+      "border": "0.5px solid rgba(255,255,255,0.15)",
+      "border_radius": "8px"
+    }
+  },
+  "media": {
+    "auth_background": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/6d2939be-4119-4ed8-9e70-2f0a6b5278ec/images/5f4de3f877d5cde36781363d93a779b50d4883f057a34753bf35993f3aed1417.png",
+      "description": "Abstract 3D dark glassmorphism scene for login/signup wizard split-screen."
+    },
+    "empty_state_graphic": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/6d2939be-4119-4ed8-9e70-2f0a6b5278ec/images/eded8cf43f0a0c027b98be26dfc2ff0386bfbbff1111ac18dded143b43111b84.png",
+      "description": "Minimalist wireframe folder icon for Media Vault or empty table states."
+    },
+    "avatars": [
+      {
+        "url": "https://images.unsplash.com/photo-1672685667592-0392f458f46f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0fGVufDB8fHx8MTc3NjUzNjU1NHww&ixlib=rb-4.1.0&q=85",
+        "description": "Team member 1"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1762522926157-bcc04bf0b10a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwzfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0fGVufDB8fHx8MTc3NjUzNjU1NHww&ixlib=rb-4.1.0&q=85",
+        "description": "Team member 2"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1576558656222-ba66febe3dec?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0fGVufDB8fHx8MTc3NjUzNjU1NHww&ixlib=rb-4.1.0&q=85",
+        "description": "Team member 3"
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Install and use lucide-react for all standard icons.",
+    "Do not use generic font Inter. Ensure Outfit and Manrope are loaded.",
+    "All interactive elements MUST include a data-testid attribute in kebab-case (e.g. data-testid='login-submit-button').",
+    "Implement 0.5px borders exactly. If CSS 0.5px fails in certain browsers, use a 1px border with the provided 0.08 alpha color.",
+    "Ensure the application strictly handles light/dark mode via the provided color scales. The requested design targets dark mode primarily.",
+    "Use standard HTML+Tailwind for complex layout patterns; use customized Shadcn UI components for dropdowns, selects, modals, and tables.",
+    "Follow the 150ms ease rule strictly for all hover and active states."
+  ]
+}
