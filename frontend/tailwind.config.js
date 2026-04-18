@@ -61,18 +61,18 @@ module.exports = {
         ig: '#C13584',
         li: '#0A66C2',
         surface: {
-          DEFAULT: '#0f0f0f',
-          secondary: '#1a1a1a',
-          tertiary: '#242424',
+          DEFAULT: 'rgb(var(--bg-primary) / <alpha-value>)',
+          secondary: 'rgb(var(--bg-secondary) / <alpha-value>)',
+          tertiary: 'rgb(var(--bg-tertiary) / <alpha-value>)',
         },
         ink: {
-          DEFAULT: '#ffffff',
-          secondary: '#a1a1aa',
-          tertiary: '#71717a',
+          DEFAULT: 'rgb(var(--text-primary) / <alpha-value>)',
+          secondary: 'rgb(var(--text-secondary) / <alpha-value>)',
+          tertiary: 'rgb(var(--text-tertiary) / <alpha-value>)',
         },
         edge: {
-          DEFAULT: 'rgba(255,255,255,0.08)',
-          hover: 'rgba(255,255,255,0.15)',
+          DEFAULT: 'rgb(var(--border-default) / 0.08)',
+          hover: 'rgb(var(--border-default) / 0.15)',
         },
       },
       keyframes: {

@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { useAuth, usePlatform } from "@/lib/store";
+import React, { useEffect, useState } from "react";
+import { useAuth, usePlatform, useUI } from "@/lib/store";
 import { has } from "@/lib/permissions";
-import { Bell, ChevronDown, RefreshCw } from "lucide-react";
+import { Bell, ChevronDown, RefreshCw, Sun, Moon } from "lucide-react";
 import { api } from "@/lib/api";
 import { relativeTime } from "@/lib/format";
 import toast from "react-hot-toast";
@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 const TopBar = () => {
   const { user } = useAuth();
   const { platform, dateRange, setPlatform, setDateRange } = usePlatform();
+  const { theme, toggleTheme } = useUI();
   const [syncing, setSyncing] = useState(false);
   const [lastSync, setLastSync] = useState(new Date().toISOString());
 
@@ -88,6 +89,16 @@ const TopBar = () => {
           Live
         </button>
       )}
+
+      {/* Theme toggle */}
+      <button
+        onClick={toggleTheme}
+        data-testid="theme-toggle"
+        className="p-1.5 rounded-md text-ink-secondary hover:text-ink hover:bg-surface-tertiary transition"
+        title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      >
+        {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      </button>
 
       {/* Bell */}
       <button

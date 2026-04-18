@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { useAuth } from "@/lib/store";
+import { useAuth, useUI } from "@/lib/store";
 import AppShell from "@/components/AppShell";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
@@ -49,6 +49,12 @@ const HomeRoute = () => {
 };
 
 function App() {
+  const { theme } = useUI();
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "light") root.classList.add("light");
+    else root.classList.remove("light");
+  }, [theme]);
   return (
     <BrowserRouter>
       <Toaster

@@ -6,17 +6,18 @@
 
 html, body, #root {
   height: 100%;
-  background: #0f0f0f;
+  background: rgb(var(--bg-primary));
 }
 
 body {
   margin: 0;
   font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 400;
-  color: #ffffff;
-  background: #0f0f0f;
+  color: rgb(var(--text-primary));
+  background: rgb(var(--bg-primary));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -27,6 +28,7 @@ h1, h2, h3, h4, h5, h6 {
 
 @layer base {
   :root {
+    /* dark tokens */
     --bg-primary: 15 15 15;
     --bg-secondary: 26 26 26;
     --bg-tertiary: 36 36 36;
@@ -34,14 +36,10 @@ h1, h2, h3, h4, h5, h6 {
     --text-primary: 255 255 255;
     --text-secondary: 161 161 170;
     --text-tertiary: 113 113 122;
-    --brand: 124 58 237;
-    --success: 34 197 94;
-    --warning: 245 158 11;
-    --danger: 239 68 68;
-    --ig: 193 53 132;
-    --li: 10 102 194;
+    --card-bg: 26 26 26;
+    --input-bg: 36 36 36;
 
-    /* shadcn tokens tuned for dark */
+    /* shadcn dark */
     --background: 0 0% 6%;
     --foreground: 0 0% 100%;
     --card: 0 0% 10%;
@@ -68,29 +66,61 @@ h1, h2, h3, h4, h5, h6 {
     --chart-4: 142 71% 45%;
     --chart-5: 38 92% 50%;
   }
+
+  html.light {
+    --bg-primary: 250 250 252;
+    --bg-secondary: 255 255 255;
+    --bg-tertiary: 244 244 246;
+    --border-default: 24 24 27;
+    --text-primary: 15 15 15;
+    --text-secondary: 71 71 80;
+    --text-tertiary: 113 113 122;
+    --card-bg: 255 255 255;
+    --input-bg: 244 244 246;
+
+    --background: 0 0% 98%;
+    --foreground: 0 0% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 88%;
+    --input: 0 0% 94%;
+    --ring: 262 83% 58%;
+  }
 }
 
 @layer base {
   * { @apply border-border; }
   body { @apply bg-background text-foreground; }
-  ::selection { background: rgba(124, 58, 237, 0.35); color: #fff; }
+  ::selection { background: rgba(124, 58, 237, 0.35); color: rgb(var(--text-primary)); }
 }
 
 /* Card primitive */
 .ch-card {
-  background: #1a1a1a;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgb(var(--card-bg));
+  border: 1px solid rgb(var(--border-default) / 0.08);
   border-radius: 12px;
   transition: border-color 150ms ease, background-color 150ms ease;
 }
 .ch-card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgb(var(--border-default) / 0.15);
 }
 
 .ch-input {
-  background: #242424;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  background: rgb(var(--input-bg));
+  border: 1px solid rgb(var(--border-default) / 0.08);
+  color: rgb(var(--text-primary));
   border-radius: 8px;
   transition: border-color 150ms ease;
 }
@@ -99,13 +129,14 @@ h1, h2, h3, h4, h5, h6 {
   border-color: rgba(124, 58, 237, 0.7);
 }
 
+html.light .ch-card:hover { border-color: rgb(var(--border-default) / 0.2); }
+
 /* Scrollbars */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 8px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+::-webkit-scrollbar-thumb { background: rgb(var(--border-default) / 0.15); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--border-default) / 0.3); }
 
-/* Animations */
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
@@ -120,10 +151,6 @@ h1, h2, h3, h4, h5, h6 {
 
 .strike-complete {
   text-decoration: line-through;
-  text-decoration-color: rgba(255,255,255,0.3);
-  color: #71717a;
-}
-
-@layer base {
-  [data-debug-wrapper="true"] { display: contents !important; }
+  text-decoration-color: rgb(var(--text-primary) / 0.3);
+  color: rgb(var(--text-tertiary));
 }

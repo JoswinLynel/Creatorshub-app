@@ -68,3 +68,17 @@ Build CreatorHub — an all-in-one analytics, automation and business management
 - **Billing tab** — Pro plan card (£29/mo + 7 features + Manage billing), Business upgrade card (£79/mo + 7 features + Upgrade CTA), Cancel subscription link with confirmation dialog.
 - **Backend** — `GET /api/settings` (returns general/notifications/ai/plan), `PUT /api/settings/general|notifications|ai` all persisting to workspace doc.
 - **Sidebar refined** — removed standalone Connections nav (Connections now lives inside Settings tab), removed AI Insights badge per final spec. Final order: Overview{Dashboard, Analytics, Posts} / Productivity{Tasks red badge, Calendar green badge} / Growth{Automations, Brand Deals, AI Insights} / Workspace{Media Vault, Team purple badge, Settings}.
+
+## Implemented — 2026-04-18 (v3 ship)
+- **Brand Deals Kanban with drag-drop** (@dnd-kit) — drag any card between the 5 stage columns (New Enquiry → Negotiating → Contract Sent → Signed → Completed), optimistic UI with rollback on API failure, column highlight on hover-over, drag overlay preview.
+- **Deal detail drawer** — right-side slide-out with brand avatar + contact + email, Value/Deadline/Platforms summary, editable Stage dropdown, Description, Notes timeline (free-text), "Mark complete" quick action + "Save changes".
+- **Media Kit PDF export** — one-click jsPDF generation of branded media kit (creator name + date header, Audience block with per-platform handle + follower count, Performance snapshot with pipeline/signed/avg deal size, footer). Downloads as `MediaKit-<name>.pdf`.
+- **Automations Simulate Fire** — new amber lightning-bolt button on each automation row (edit-permission only). Calls `POST /api/automations/:id/simulate` which picks a sample user, runs the message_template through variable replacement ({name}/{link}/{product}/{handle}/{post_title}), inserts a real persisted entry into `automation_logs`, increments trigger_count, and toasts back a preview of the generated DM.
+- **Persisted automation logs** — `/api/automations/logs` now returns real stored entries when available, falling back to synthesised demo entries only when the collection is empty for a workspace.
+- **Light-mode toggle** in TopBar (sun/moon) — palette fully driven by CSS custom properties (`--bg-primary/secondary/tertiary`, `--text-primary/secondary/tertiary`, `--border-default`, shadcn tokens). Theme persisted in zustand+localStorage, applied via `html.light` class. Purple brand accent preserved in both modes.
+
+## Remaining backlog
+- P0: Real Instagram Graph API + LinkedIn OAuth wiring (awaiting credentials from user)
+- P1: Light-mode polish for Recharts axes/tooltips (bars still use platform pink/blue which is intentional; only tooltip backgrounds might warrant a lighter variant)
+- P2: Real automation rule evaluator / webhook processor (currently simulate-only)
+- P2: Split server.py into /routes subpackage

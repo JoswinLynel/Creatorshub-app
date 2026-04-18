@@ -1090,11 +1090,9 @@ async def delete_automation(aid: str, user: Dict = Depends(require_permission("a
 
 @api_router.get("/automations/logs")
 async def automation_logs(user: Dict = Depends(require_permission("automations_view"))):
-    # Fetch stored logs or synthesise from triggered automations
     logs = await db.automation_logs.find({"workspace_id": user["workspace_id"]}, {"_id": 0}).sort("created_at", -1).limit(10).to_list(10)
     if logs:
         return {"logs": logs}
-    # Mock 5 entries based on current automations
     autos = await db.automations.find({"workspace_id": user["workspace_id"], "is_active": True}, {"_id": 0}).to_list(10)
     samples = [
         {"triggered_by": "@sarah_mills", "action_taken": "Sent DM", "status": "success", "minutes_ago": 3},
@@ -1108,6 +1106,49 @@ async def automation_logs(user: Dict = Depends(require_permission("automations_v
         auto = autos[i % max(len(autos), 1)] if autos else {"name": "Automation"}
         synth.append({"rule_name": auto.get("name", "Automation"), **s})
     return {"logs": synth}
+
+@api_router.post("/automations/{aid}/simulate")
+async def simulate_automation(aid: str, user: Dict = Depends(require_permission("automations_edit"))):
+    auto = await db.automations.find_one({"id": aid, "workspace_id": user["workspace_id"]}, {"_id": 0})
+    if not auto:
+        raise HTTPException(404, "Automation not found")
+    import random
+    sample_users = ["@sarah_mills", "@marco_t", "@brand.collab", "@alex.kim", "@maya_wrld", "@dev_chen"]
+    sample_actions = {
+        "send_dm": "Sent DM",
+        "like_comment": "Liked comment",
+        "reply_comment": "Replied to comment",
+        "create_task": "Created task",
+    }
+    now = datetime.now(timezone.utc).isoformat()
+    triggered_by = random.choice(sample_users)
+    action_taken = sample_actions.get(auto.get("action"), "Triggered")
+    # Build preview text if message template
+    preview = ""
+    tmpl = auto.get("message_template") or ""
+    if tmpl:
+        preview = (tmpl
+            .replace("{name}", triggered_by.lstrip("@").split("_")[0].capitalize())
+            .replace("{link}", "creatorhub.io/jane")
+            .replace("{product}", "Morning Routine Guide")
+            .replace("{handle}", "@janedoe")
+            .replace("{post_title}", auto.get("name", "")))
+    log = {
+        "id": str(uuid.uuid4()),
+        "workspace_id": user["workspace_id"],
+        "automation_id": aid,
+        "rule_name": auto.get("name"),
+        "triggered_by": triggered_by,
+        "action_taken": action_taken,
+        "status": "success",
+        "minutes_ago": 0,
+        "preview": preview,
+        "created_at": now,
+    }
+    await db.automation_logs.insert_one(log)
+    await db.automations.update_one({"id": aid}, {"$inc": {"trigger_count": 1}})
+    log.pop("_id", None)
+    return log
 
 # =============== ROUTES: NAV COUNTS (for sidebar badges) ===============
 @api_router.get("/nav/counts")

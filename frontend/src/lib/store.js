@@ -60,7 +60,9 @@ export const useUI = create(
   persist(
     (set) => ({
       sidebarCollapsed: false,
+      theme: "dark",
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+      toggleTheme: () => set((s) => ({ theme: s.theme === "dark" ? "light" : "dark" })),
     }),
     { name: "ch-ui-v1" }
   )

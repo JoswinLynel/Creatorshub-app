@@ -3,7 +3,7 @@ import { api, handleApiError } from "@/lib/api";
 import { useAuth } from "@/lib/store";
 import { has } from "@/lib/permissions";
 import toast from "react-hot-toast";
-import { Plus, X, Edit2, MessageCircle, BookOpen, UserPlus, Clock, Mail, Heart, Reply, CheckSquare, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Plus, X, Edit2, MessageCircle, BookOpen, UserPlus, Clock, Mail, Heart, Reply, CheckSquare, AlertCircle, CheckCircle2, Zap } from "lucide-react";
 
 const TRIGGERS = [
   { key: "comment_keyword", label: "Comment keyword", desc: "When someone comments a specific word", icon: MessageCircle, color: "#C13584" },
@@ -25,7 +25,7 @@ const SAMPLE = { "{name}": "Sarah", "{link}": "creatorhub.io/jane", "{product}":
 const platformDot = (p) => p === "instagram" ? "bg-ig" : p === "linkedin" ? "bg-li" : "bg-brand";
 const platformLabel = (p) => p === "instagram" ? "Instagram" : p === "linkedin" ? "LinkedIn" : p === "both" ? "Both" : "All";
 
-const AutomationRow = ({ a, onToggle, onEdit }) => (
+const AutomationRow = ({ a, onToggle, onEdit, onSimulate, canEdit }) => (
   <div className="ch-card p-4 flex items-center gap-3" data-testid={`automation-row-${a.id}`}>
     <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0" style={{ background: a.platform === "instagram" ? "rgba(193,53,132,0.15)" : a.platform === "linkedin" ? "rgba(10,102,194,0.15)" : "rgba(124,58,237,0.15)" }}>
       {a.icon || "⚡"}
@@ -37,6 +37,11 @@ const AutomationRow = ({ a, onToggle, onEdit }) => (
         {platformLabel(a.platform)} · {a.trigger_count || 0} triggers
       </div>
     </div>
+    {canEdit && (
+      <button onClick={() => onSimulate(a)} title="Simulate fire" data-testid={`automation-simulate-${a.id}`} className="text-xs text-amber-400 hover:text-amber-300 p-1.5">
+        <Zap className="w-3.5 h-3.5" />
+      </button>
+    )}
     <button onClick={() => onEdit(a)} className="text-xs text-ink-secondary hover:text-ink p-1.5" data-testid={`automation-edit-${a.id}`}>
       <Edit2 className="w-3.5 h-3.5" />
     </button>
@@ -315,6 +320,18 @@ export default function Automations() {
     } catch (e) { handleApiError(e); }
   };
 
+  const simulate = async (a) => {
+    try {
+      const { data } = await api.post(`/automations/${a.id}/simulate`);
+      if (data.preview) {
+        toast.success(`Fire simulated — preview: "${data.preview.slice(0, 60)}${data.preview.length > 60 ? '…' : ''}"`, { duration: 6000 });
+      } else {
+        toast.success(`Fire simulated — ${data.action_taken} for ${data.triggered_by}`);
+      }
+      load();
+    } catch (e) { handleApiError(e); }
+  };
+
   return (
     <div className="p-5 md:p-8 space-y-6 fade-up" data-testid="automations-page">
       <div className="flex items-start justify-between flex-wrap gap-3">
@@ -338,7 +355,7 @@ export default function Automations() {
           <div className="text-[11px] uppercase tracking-wider text-ink-tertiary mb-2">Comment automations</div>
           <div className="space-y-2">
             {loading ? [...Array(3)].map((_, i) => <div key={i} className="h-16 bg-surface-secondary rounded-xl animate-pulse" />) :
-              comment.map(a => <AutomationRow key={a.id} a={a} onToggle={toggle} onEdit={() => canEdit && setModal({ open: true, existing: a })} />)}
+              comment.map(a => <AutomationRow key={a.id} a={a} onToggle={toggle} onEdit={() => canEdit && setModal({ open: true, existing: a })} onSimulate={simulate} canEdit={canEdit} />)}
             {!loading && comment.length === 0 && <div className="text-xs text-ink-tertiary p-4">No comment automations yet.</div>}
           </div>
         </div>
@@ -346,7 +363,7 @@ export default function Automations() {
           <div className="text-[11px] uppercase tracking-wider text-ink-tertiary mb-2">Scheduling automations</div>
           <div className="space-y-2">
             {loading ? [...Array(3)].map((_, i) => <div key={i} className="h-16 bg-surface-secondary rounded-xl animate-pulse" />) :
-              schedule.map(a => <AutomationRow key={a.id} a={a} onToggle={toggle} onEdit={() => canEdit && setModal({ open: true, existing: a })} />)}
+              schedule.map(a => <AutomationRow key={a.id} a={a} onToggle={toggle} onEdit={() => canEdit && setModal({ open: true, existing: a })} onSimulate={simulate} canEdit={canEdit} />)}
             {!loading && schedule.length === 0 && <div className="text-xs text-ink-tertiary p-4">No scheduling automations yet.</div>}
           </div>
         </div>
