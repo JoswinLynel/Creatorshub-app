@@ -1,7 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { useAuth, useUI } from "@/lib/store";
+import { getAccessToken } from "@/lib/api";
 import AppShell from "@/components/AppShell";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
@@ -50,11 +51,51 @@ const HomeRoute = () => {
 
 function App() {
   const { theme } = useUI();
+  const { user, logout, refreshMe } = useAuth();
+  const [bootstrapped, setBootstrapped] = useState(false);
+
   useEffect(() => {
     const root = document.documentElement;
     if (theme === "light") root.classList.add("light");
     else root.classList.remove("light");
   }, [theme]);
+
+  // On mount, reconcile persisted zustand user with actual token state.
+  // - If we have a user but no access token -> ghost session, wipe it.
+  // - If we have both -> quickly verify the token via /auth/me. If it fails
+  //   with 401, the axios interceptor handles refresh or hard-logout.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const token = getAccessToken();
+      if (user && !token) {
+        logout();
+      } else if (user && token) {
+        try {
+          await refreshMe();
+        } catch (_) {
+          // interceptor will have handled refresh/logout already
+        }
+      }
+      if (!cancelled) setBootstrapped(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (!bootstrapped) {
+    return (
+      <div
+        data-testid="app-bootstrapping"
+        className="flex h-screen w-screen items-center justify-center bg-background text-muted-foreground text-sm"
+      >
+        Loading…
+      </div>
+    );
+  }
+
   return (
     <BrowserRouter>
       <Toaster

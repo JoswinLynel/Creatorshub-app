@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { api } from "./api";
+import { api, setTokens, clearAuth } from "./api";
 
 export const useAuth = create(
   persist(
@@ -11,21 +11,18 @@ export const useAuth = create(
       hydrated: false,
       login: async (email, password) => {
         const { data } = await api.post("/auth/login", { email, password });
-        localStorage.setItem("ch_access_token", data.access_token);
-        localStorage.setItem("ch_refresh_token", data.refresh_token);
+        setTokens(data.access_token, data.refresh_token);
         set({ user: data.user, accessToken: data.access_token, refreshToken: data.refresh_token });
         return data.user;
       },
       signup: async (name, email, password, workspace_name) => {
         const { data } = await api.post("/auth/signup", { name, email, password, workspace_name });
-        localStorage.setItem("ch_access_token", data.access_token);
-        localStorage.setItem("ch_refresh_token", data.refresh_token);
+        setTokens(data.access_token, data.refresh_token);
         set({ user: data.user, accessToken: data.access_token, refreshToken: data.refresh_token });
         return data.user;
       },
       logout: () => {
-        localStorage.removeItem("ch_access_token");
-        localStorage.removeItem("ch_refresh_token");
+        clearAuth();
         set({ user: null, accessToken: null, refreshToken: null });
       },
       refreshMe: async () => {
