@@ -57,3 +57,14 @@ Build CreatorHub — an all-in-one analytics, automation and business management
 - P1: Light-mode toggle.
 - P2: Real automation rule evaluator / webhook processor.
 - P2: Split server.py into /routes subpackage; Billing tab; Resend email for invites.
+
+## Implemented — 2026-04-18 (v2.1 settings overhaul)
+- **Settings page** — full 6-tab layout: General / Connections / Notifications / Team Roles / AI / Billing with URL-param persistence (`/settings?tab=ai`).
+- **General tab** — workspace name, currency+date-format side-by-side, timezone, new Auto-assign-leads (round-robin) toggle, Save changes.
+- **Connections tab** — reuses standalone Connections component (platform cards + sync-all + auto-sync toggle).
+- **Notifications tab** — 6 labelled toggle rows (Overdue, Weekly digest, New deal, Post performance, Team activity, Sync errors) with Save button.
+- **Team Roles tab** — 5 role cards left column with user counts, permission matrix right column (6 grouped permission categories x 19 individual permissions, green check / red X), "Edit role" teaser button.
+- **AI tab** — Enable toggle, frequency select, read-only AI model display (Claude Sonnet via Emergent), Health score + Competitor benchmark toggles, purple info box, Save AI preferences.
+- **Billing tab** — Pro plan card (£29/mo + 7 features + Manage billing), Business upgrade card (£79/mo + 7 features + Upgrade CTA), Cancel subscription link with confirmation dialog.
+- **Backend** — `GET /api/settings` (returns general/notifications/ai/plan), `PUT /api/settings/general|notifications|ai` all persisting to workspace doc.
+- **Sidebar refined** — removed standalone Connections nav (Connections now lives inside Settings tab), removed AI Insights badge per final spec. Final order: Overview{Dashboard, Analytics, Posts} / Productivity{Tasks red badge, Calendar green badge} / Growth{Automations, Brand Deals, AI Insights} / Workspace{Media Vault, Team purple badge, Settings}.

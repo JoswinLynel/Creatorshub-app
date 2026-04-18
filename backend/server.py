@@ -1154,6 +1154,87 @@ async def update_deal(deal_id: str, data: DealUpdate, user: Dict = Depends(requi
         raise HTTPException(404, "Deal not found")
     return doc
 
+# =============== ROUTES: SETTINGS ===============
+DEFAULT_NOTIFICATIONS = {
+    "overdue_tasks": True,
+    "weekly_digest": True,
+    "new_deal": True,
+    "post_performance": False,
+    "team_activity": True,
+    "sync_errors": True,
+}
+DEFAULT_AI_PREFS = {
+    "enabled": True,
+    "frequency": "weekly",
+    "health_score": True,
+    "competitor_benchmark": True,
+}
+
+class GeneralSettingsIn(BaseModel):
+    name: Optional[str] = None
+    currency: Optional[str] = None
+    date_format: Optional[str] = None
+    timezone: Optional[str] = None
+    auto_assign_leads: Optional[bool] = None
+
+class NotificationsIn(BaseModel):
+    overdue_tasks: Optional[bool] = None
+    weekly_digest: Optional[bool] = None
+    new_deal: Optional[bool] = None
+    post_performance: Optional[bool] = None
+    team_activity: Optional[bool] = None
+    sync_errors: Optional[bool] = None
+
+class AIPrefsIn(BaseModel):
+    enabled: Optional[bool] = None
+    frequency: Optional[str] = None
+    health_score: Optional[bool] = None
+    competitor_benchmark: Optional[bool] = None
+
+@api_router.get("/settings")
+async def get_settings(user: Dict = Depends(require_permission("settings_view"))):
+    ws = await db.workspaces.find_one({"id": user["workspace_id"]}, {"_id": 0}) or {}
+    settings = ws.get("settings") or {}
+    return {
+        "general": {
+            "name": ws.get("name", ""),
+            "currency": ws.get("currency", "USD"),
+            "date_format": ws.get("date_format", "MM/DD/YYYY"),
+            "timezone": ws.get("timezone", "UTC"),
+            "auto_assign_leads": settings.get("auto_assign_leads", False),
+        },
+        "notifications": {**DEFAULT_NOTIFICATIONS, **(settings.get("notifications") or {})},
+        "ai": {**DEFAULT_AI_PREFS, **(settings.get("ai") or {})},
+        "plan": settings.get("plan", "pro"),
+    }
+
+@api_router.put("/settings/general")
+async def put_general(data: GeneralSettingsIn, user: Dict = Depends(require_permission("settings_edit"))):
+    updates = data.model_dump(exclude_none=True)
+    top = {k: updates[k] for k in ("name", "currency", "date_format", "timezone") if k in updates}
+    nested = {}
+    if "auto_assign_leads" in updates:
+        nested["settings.auto_assign_leads"] = updates["auto_assign_leads"]
+    if top or nested:
+        await db.workspaces.update_one({"id": user["workspace_id"]}, {"$set": {**top, **nested}})
+    return {"success": True, "message": "Settings saved"}
+
+@api_router.put("/settings/notifications")
+async def put_notifications(data: NotificationsIn, user: Dict = Depends(require_permission("settings_edit"))):
+    updates = data.model_dump(exclude_none=True)
+    if updates:
+        set_doc = {f"settings.notifications.{k}": v for k, v in updates.items()}
+        await db.workspaces.update_one({"id": user["workspace_id"]}, {"$set": set_doc})
+    return {"success": True, "message": "Settings saved"}
+
+@api_router.put("/settings/ai")
+async def put_ai(data: AIPrefsIn, user: Dict = Depends(require_permission("settings_edit"))):
+    updates = data.model_dump(exclude_none=True)
+    if updates:
+        set_doc = {f"settings.ai.{k}": v for k, v in updates.items()}
+        await db.workspaces.update_one({"id": user["workspace_id"]}, {"$set": set_doc})
+    return {"success": True, "message": "Settings saved"}
+
 # =============== INCLUDE & MIDDLEWARE ===============
 app.include_router(api_router)
 

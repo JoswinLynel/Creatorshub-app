@@ -24,11 +24,10 @@ const NAV = [
   { section: "Growth", items: [
     { label: "Automations", to: "/automations", icon: PlayCircle, permission: "automations_view" },
     { label: "Brand Deals", to: "/brand-deals", icon: Handshake, permission: "brand_deals_view" },
-    { label: "AI Insights", to: "/ai-insights", icon: Sparkles, permission: "ai_insights_view", badgeKey: "insights_unread", badgeColor: "bg-brand/20 text-brand border-brand/40" },
+    { label: "AI Insights", to: "/ai-insights", icon: Sparkles, permission: "ai_insights_view" },
   ]},
   { section: "Workspace", items: [
     { label: "Media Vault", to: "/media-vault", icon: Image, permission: "media_vault_view" },
-    { label: "Connections", to: "/connections", icon: Link2 },
     { label: "Team", to: "/team", icon: Users, permission: "team_view", badgeKey: "team", badgeColor: "bg-brand/20 text-brand border-brand/40" },
     { label: "Settings", to: "/settings", icon: SettingsIcon, permission: "settings_view" },
   ]},
