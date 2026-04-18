@@ -1,0 +1,46 @@
+{
+  "summary": "First end-to-end test of CreatorHub v1 (FastAPI + React). Ran 21 backend pytest cases covering auth, dashboard, analytics, tasks↔calendar atomic sync, team CRUD, permissions enforcement (Tom/Priya/Marcus), brand deals, connections, and AI insights — all 21 PASSED after a small backend fix. Ran Playwright UI suite covering owner login, sidebar rendering, forced-password-change for scheduler+analyst, redirect to /no-access for unauthorized routes, tasks/calendar/team/posts/analytics page loads. UI renders cleanly with zero JS console errors.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/auth/signup & POST /api/team/invite", "issue": "Returned 500 due to Mongo ObjectId '_id' mutation leaking into response dict (FastAPI encoder fails). FIXED by excluding '_id' when building response (server.py lines 247, 706). Retested and both now return 200."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "CalendarPage (month nav)", "issue": "Prev/Next month arrow buttons lack data-testid='calendar-prev' / 'calendar-next' (referenced in spec). Functionality may work but automation hooks missing.", "selector": "[data-testid='calendar-prev'|'calendar-next']", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Analytics & Dashboard charts", "issues": ["Recharts emits many 'width(-1) and height(-1)' warnings — Responsive container likely has 0 width during first paint (flex collapse). Cosmetic (charts render after resize) but noisy in console.", "Analytics 'Weekly views' chart shows bars only for W7 and W8 — remaining weeks render blank because seeded analytics_snapshots only cover last ~30 days. Consider backfilling seed data for 8 weeks or relabeling the card."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_creatorhub_api.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(OPTIONAL) Add data-testid='calendar-prev' and 'calendar-next' to month navigation chevrons in CalendarPage.jsx for spec compliance.",
+    "(OPTIONAL) Fix Recharts ResponsiveContainer width=-1 warnings by ensuring parent has min-width or using explicit aspect ratio.",
+    "(OPTIONAL) Backfill analytics_snapshots seed data for full 8 weeks so Analytics 'Weekly views' chart renders all bars.",
+    "RE-SEED needed: Tom's password is now 'newpass123' and Priya's is now 'newpass123' (forced-change flow was tested end-to-end). Marcus still has 'temp1234'. To reset: drop DB and restart backend (`mongosh $DB_NAME --eval 'db.dropDatabase()' && sudo supervisorctl restart backend`)."
+  ],
+  "critical_code_review_comments": [
+    "server.py insert_one() mutates input dicts with ObjectId; every POST that returns the inserted dict must exclude '_id' or use .copy() before insert. I fixed the two crashing endpoints (signup, team/invite) but reviewer should audit the rest (all other routes currently use find_one with {'_id':0} projection so they are safe).",
+    "server.py is 1042 lines — should be split into /routes subpackage (auth, team, analytics, tasks, etc.) for maintainability.",
+    "dashboard route manually checks permissions instead of using require_permission('dashboard_view') — inconsistent with rest of codebase (line 867-868). Should use dependency like others.",
+    "change-password endpoint: when must_change_password=True it silently skips current_password check — OK, but should also reject if new_password equals the temp password.",
+    "No rate limiting on /auth/login → brute-forceable.",
+    "CORS allow_origins defaults to '*' with allow_credentials=True — browsers will reject; should use explicit origin list in production."
+  ],
+  "updated_files": [
+    "/app/backend/server.py (2 small fixes — exclude '_id' from signup & team/invite responses)",
+    "/app/backend/tests/test_creatorhub_api.py (new regression suite, 21 tests)"
+  ],
+  "success_rate": {"backend": "100% (21/21)", "frontend": "~95% (all critical flows pass, 1 missing testid on calendar nav)"},
+  "test_credentials": "Jane=password123 (unchanged). Tom=newpass123 (CHANGED during test). Priya=newpass123 (CHANGED during test). Marcus=temp1234 (unchanged).",
+  "seed_data_creation": "No new seed data created. Tests use TEST_ prefixed ephemeral records (signed up TEST_signup_* users, invited TEST_invite_* members — invited member is cleaned up; signup user is NOT auto-cleaned, will accumulate across runs).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend suite at /app/backend/tests/test_creatorhub_api.py is the regression baseline — run `pytest /app/backend/tests/test_creatorhub_api.py -v`. If Tom/Priya passwords were reset, change USERS dict at top of file. The forced-password-change UI flow (Tom→Posts, Priya→Analytics) was verified end-to-end and is working. Permission enforcement (server-side 403s + sidebar filtering) is fully functional. Known non-bug: Analytics 'Weekly views' chart shows only last 2 weeks of bars because seed data is only 30 days."
+}
