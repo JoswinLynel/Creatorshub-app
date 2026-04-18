@@ -24,6 +24,8 @@ export const useAuth = create(
       logout: () => {
         clearAuth();
         set({ user: null, accessToken: null, refreshToken: null });
+        // match hardLogout parity: fully remove persisted zustand key
+        localStorage.removeItem("ch-auth-v1");
       },
       refreshMe: async () => {
         const { data } = await api.get("/auth/me");

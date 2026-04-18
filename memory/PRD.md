@@ -82,3 +82,13 @@ Build CreatorHub — an all-in-one analytics, automation and business management
 - P1: Light-mode polish for Recharts axes/tooltips (bars still use platform pink/blue which is intentional; only tooltip backgrounds might warrant a lighter variant)
 - P2: Real automation rule evaluator / webhook processor (currently simulate-only)
 - P2: Split server.py into /routes subpackage
+
+## Fixed — 2026-04-18 (P0 hotfix: auth loop / "missing auth token" dashboard reset)
+- **Root cause:** Token storage was split across two systems. `api.js` read/wrote `localStorage["ch_access_token"|"ch_refresh_token"]` while zustand `persist` stored `user` under `localStorage["ch-auth-v1"]`. When refresh failed, the interceptor cleared only the localStorage tokens and redirected to `/login`, but the persisted `user` in `ch-auth-v1` survived → `RedirectIfAuthed` bounced the user to `/` → `/dashboard` → 401 → infinite loop.
+- **Fix:**
+  - `frontend/src/lib/api.js` rewritten: `setTokens()`, `getAccessToken()`, `clearAuth()` helpers; hard-logout path now removes BOTH `ch_*` localStorage keys AND the zustand persist key (`ch-auth-v1`) before `window.location.replace("/login")`.
+  - Added `isRefreshing` flag + queue so concurrent 401s share a single refresh call (verified: exactly 1 refresh under parallel failures).
+  - `frontend/src/lib/store.js` `logout()` now calls `clearAuth()` and removes the zustand key for parity with `hardLogout`.
+  - `frontend/src/App.js` added bootstrap `useEffect` that validates session via `/auth/me` on mount (and drops ghost sessions where zustand has a user but no access token) behind a small "Loading…" splash.
+- **Verification:** Frontend testing agent (iteration_3.json) — all 8 scenarios PASS including fresh login, hard reload, corrupted-access-only silent refresh, corrupted-both clean logout, must_change_password routing, scheduler sidebar permissions, explicit logout, and concurrent 401 queue.
+
